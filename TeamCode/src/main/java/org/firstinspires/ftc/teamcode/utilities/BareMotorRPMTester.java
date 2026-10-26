@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.utilities;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Utility;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.Range;
@@ -17,7 +18,7 @@ import com.qualcomm.robotcore.util.Range;
  *   3. Gamepad 1 D-pad UP = +50 RPM, D-pad DOWN = -50 RPM.
  *   4. When the motor is within 30 RPM of the target, the screen says "At target RPM".
  */
-@TeleOp(name = "Bare Motor RPM Tester", group = "Test")
+@Utility(name = "Bare Motor RPM Tester")
 public class BareMotorRPMTester extends OpMode {
 
     // ---- Settings ----
