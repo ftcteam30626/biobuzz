@@ -1,10 +1,10 @@
-package org.firstinspires.ftc.teamcode.mechanisms;
+package org.firstinspires.ftc.teamcode.Mechanisms;
 
-import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.Command;              // A small action the robot can run (e.g. "turn on").
 
-import dev.nextftc.hardware.actuators.NextMotor;
-import dev.nextftc.robot.Mechanism;
-import dev.nextftc.robot.Telemetry;
+import dev.nextftc.hardware.actuators.NextMotor;  // NextFTC's motor.
+import dev.nextftc.robot.Mechanism;               // Marks this class as one part of the robot.
+import dev.nextftc.robot.Telemetry;               // Sends text/numbers to the Driver Station screen.
 
 /*
  * INTAKE MECHANISM
@@ -19,14 +19,16 @@ import dev.nextftc.robot.Telemetry;
 public class Intake implements Mechanism {
 
     // ---- Settings ----
-    public static double INTAKE_POWER = 1.0;
+    public static double INTAKE_POWER = 1.0; // 1.0 = full speed. Use a negative number to spin backwards.
 
     // ---- Hardware ----
+    // NextMotor doesn't touch the hardwareMap until it's first used, so it's safe to create it here.
     private final NextMotor intakeMotor = new NextMotor("IntakeMotor");
 
-    private boolean on = false;
+    private boolean on = false; // true while the intake is running.
 
     // ---- Commands ----
+    // instant(...) makes a Command that runs the code inside it once, right away.
 
     /** Runs the intake at full speed. */
     public Command turnOn() {
@@ -40,7 +42,7 @@ public class Intake implements Mechanism {
 
     /** Flips the intake: ON -> OFF, or OFF -> ON. */
     public Command toggle() {
-        return instant(() -> setOn(!on));
+        return instant(() -> setOn(!on)); // "!" flips true <-> false.
     }
 
     /**
@@ -50,11 +52,13 @@ public class Intake implements Mechanism {
     public void stopNow() {
         on = false;
         intakeMotor.setThrottle(0.0);
-        intakeMotor.update();
+        intakeMotor.update(); // Send the 0 power to the motor immediately.
     }
 
+    // Turns the motor on or off and remembers which one it is.
     private void setOn(boolean turnOn) {
         on = turnOn;
+        // "a ? b : c" means "if a, use b, otherwise use c".
         intakeMotor.setThrottle(turnOn ? INTAKE_POWER : 0.0);
     }
 
