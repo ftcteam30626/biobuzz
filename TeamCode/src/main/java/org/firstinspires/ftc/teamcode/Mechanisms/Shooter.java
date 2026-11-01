@@ -35,12 +35,11 @@ public class Shooter implements Mechanism {
     public static double GATE_CLOSED = 0.5;  // Servo position that blocks the balls.
     public static double GATE_OPEN = 1.0;    // Servo position that lets balls through.
 
-    // ---- PIDF gains (PLACEHOLDERS - tune these!) ----
-    // Units: motor power (0 to 1) per RPM. That's why they're so small.
-    public static double kP = 0.0005;     // 200 RPM too slow -> adds 0.1 power.
-    public static double kI = 0.0;        // Usually not needed on a flywheel.
-    public static double kD = 0.0;        // Usually not needed on a flywheel.
-    public static double kF = 1.0 / 6000; // Full power ~= 6000 RPM, so power = RPM / 6000.
+    // ---- PIDF gains ----
+    public static double kP = 0.005;      // Proportional gain.
+    public static double kI = 0.0;        // Integral gain.
+    public static double kD = 0.0;        // Derivative gain.
+    public static double kF = 0.00025;    // Feed-forward gain.
 
     private static final double TICKS_PER_REV = 28.0; // Bare motor encoder ticks per turn.
 
