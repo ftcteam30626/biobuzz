@@ -52,12 +52,12 @@ public class PanelsPIDFTuner extends OpMode {
 
     // ======================= EDIT THESE IN PANELS =======================
     // Press ENTER after each change so the robot actually gets the new value.
-    public static double P = 0.0;           // Push harder when far from target. Too big = wobbles.
+    public static double P = 0.005;           // Push harder when far from target. Too big = wobbles.
     public static double I = 0.0;           // Slowly removes small leftover error.
     public static double D = 0.0;           // Slows down when closing in fast (stops overshoot).
     // Base power guess: ~full power at 6000 RPM. Without F (and with P=0) the motor never moves.
-    public static double F = 0.00023;
-    public static double TARGET_RPM = 2200; // Speed we want the shooter wheel to spin at.
+    public static double F = 0.00025;
+    public static double TARGET_RPM = 2050; // Speed we want the shooter wheel to spin at.
     // Boolean (not DcMotorSimple.Direction): SDK enums can break Panels live updates for the whole class.
     public static boolean MOTOR_REVERSED = false;
 
