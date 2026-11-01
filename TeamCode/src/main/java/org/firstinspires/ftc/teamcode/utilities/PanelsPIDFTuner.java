@@ -1,11 +1,10 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.utilities;
 
 import com.bylazar.configurables.annotations.Configurable;  // Lets Panels edit the settings live.
 import com.bylazar.telemetry.PanelsTelemetry;              // Sends data to Panels (graphs).
 import com.bylazar.telemetry.TelemetryManager;             // The object we add Panels data to.
 import com.qualcomm.hardware.lynx.LynxModule;               // The Control/Expansion Hub (for fast reads).
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.Utility;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -79,13 +78,14 @@ import com.qualcomm.robotcore.util.Range;                  // Range.clip(x, min,
  * ----------------------------------------------------------------------------
  *   1. Connect the laptop to the robot's Wi-Fi.
  *   2. Open Panels in a browser: http://192.168.43.1:8001
- *   3. On the Driver Station pick TeleOp "Panels PIDF Tuner" (group "Tuning") and press INIT.
+ *   3. On the Driver Station pick Utility "Panels PIDF Tuner" and press INIT.
  *   4. In Panels > Configurables > PanelsPIDFTuner set:
- *        MOTOR_NAME     = the motor's name in the robot configuration (exact spelling!)
+ *        MOTOR_NAME     = robot config name (default ShooterMotor — change if needed)
  *        MOTOR_TYPE     = your motor (or CUSTOM and fill CUSTOM_TICKS_PER_REV)
  *                         (needed so RPM <-> encoder conversion is correct)
  *        CONTROL_MODE   = VELOCITY (RPM) or POSITION (ticks)
  *        CONTROLLER     = leave on CUSTOM_CODE (see GAIN UNITS at the bottom)
+ *        VOLTAGE_COMPENSATION = leave OFF for Shooter.java (it has no battery scale)
  *      Telemetry says "Motor: OK" when it found the motor.
  *   5. In Panels > Graph, add: target, measured (and error / power if you want).
  *   6. Press START.
@@ -104,7 +104,7 @@ import com.qualcomm.robotcore.util.Range;                  // Range.clip(x, min,
  *   VELOCITY (flywheel / shooter):
  *     1. Set P, I, D to 0.
  *     2. Press right bumper (F finder). The motor spins at full power for a few seconds,
- *        measures its top speed, and fills in F for you. Keep hands clear!
+ *        averages steady-state RPM (not peak), and fills in F for you. Keep hands clear!
  *     3. Press A. With only F, "measured" should end up near "target" (a bit low is fine).
  *     4. Set TEST_MODE = STEP so the target flips on its own. Now raise P a little at a
  *        time (try 0.0005, 0.001, 0.002 ...). Stop when it gets to target quickly.
@@ -137,6 +137,11 @@ import com.qualcomm.robotcore.util.Range;                  // Range.clip(x, min,
  *   CUSTOM_CODE + POSITION: error is in ticks; P is still tiny for the same reason.
  *   HUB_BUILT_IN: targets are still RPM (converted for you), but P/I/D/F use hub units
  *     (roughly F = 32767 / max ticks/sec). Do NOT mix hub gains into CUSTOM_CODE.
+ *
+ * SHOOTER / NextFTC TRANSFER
+ *   Defaults match Shooter.java: VOLTAGE_COMPENSATION off, MOTOR_NAME = ShooterMotor.
+ *   Leave voltage compensation OFF unless your competition code also scales by battery.
+ *   Shooter currently uses kP/kI/kD/kV only (no kS) — keep kS at 0 when copying there.
  * ============================================================================
  */
 @Configurable // Makes every public static field below show up (and be editable) in Panels.
@@ -153,10 +158,10 @@ public class PanelsPIDFTuner extends OpMode {
     public static String HOW_TO_4 = "VELOCITY (RPM): P=I=D=0, right bumper finds F, then raise P slowly. Wiggles? lower P";
     public static String HOW_TO_5 = "POSITION (ticks): F = hold power, kS = just-moves power, raise P, add D if it overshoots";
     public static String HOW_TO_6 = "TEST_MODE = STEP flips targets by itself. Try to make rise/overshoot/settle small";
-    public static String HOW_TO_7 = "Copy the 'COPY THIS' line into your code (RPM gains for velocity). Panels values reset on restart!";
+    public static String HOW_TO_7 = "Copy 'COPY THIS (Shooter)' into Shooter.java. Keep VOLTAGE_COMPENSATION off + kS=0 to match. Values reset on restart!";
 
     // ======================= MOTOR =======================
-    public static String MOTOR_NAME = "motor"; // Motor's name in the robot configuration.
+    public static String MOTOR_NAME = "ShooterMotor"; // Must match the robot configuration name.
     public static boolean REVERSED = false;    // true = spin the other way.
     public static MotorType MOTOR_TYPE = MotorType.GOBILDA_6000_RPM_BARE;
     public static double CUSTOM_TICKS_PER_REV = 28; // only used when MOTOR_TYPE = CUSTOM
@@ -172,7 +177,7 @@ public class PanelsPIDFTuner extends OpMode {
     public static double I = 0.0; // "Fix it slowly": removes small error that won't go away.
     public static double D = 0.0; // "Brakes": eases off when closing in fast. Stops overshoot.
     public static double F = 0.0; // "The guess": power we already know we need. Start here.
-    public static double kS = 0.0;              // CUSTOM_CODE only: small push to get past friction
+    public static double kS = 0.0;              // CUSTOM_CODE only; Shooter.java currently ignores this
 
     // ======================= TARGETS =======================
     // VELOCITY = RPM, POSITION = encoder ticks.
@@ -185,8 +190,10 @@ public class PanelsPIDFTuner extends OpMode {
     public static double MAX_POWER = 1.0;            // Most power the controller can send.
     public static double MAX_INTEGRAL_POWER = 0.25; // most power the I term may add
     public static double D_FILTER = 0.7;         // Smooths D so it doesn't jitter. 0 = off, 0.9 = very smooth
-    public static boolean VOLTAGE_COMPENSATION = true; // Give more power when the battery is low.
-    public static double NOMINAL_VOLTAGE = 12.0;       // Voltage the gains were tuned at.
+    // OFF by default: Shooter / NextFTC velocity mode does not scale by battery. Turn on only if
+    // competition code also multiplies output by NOMINAL_VOLTAGE / battery.
+    public static boolean VOLTAGE_COMPENSATION = false;
+    public static double NOMINAL_VOLTAGE = 12.0;       // Voltage the gains were tuned at (only if compensation on).
 
     // ======================= STATS =======================
     public static double TOLERANCE = 50;         // "close enough" (RPM in VELOCITY, ticks in POSITION)
@@ -195,7 +202,7 @@ public class PanelsPIDFTuner extends OpMode {
     // ======================= F FINDER =======================
     public static boolean RUN_F_FINDER = false;  // set true in Panels (or right bumper) to run it
     public static double F_FINDER_SECONDS = 2.5;     // How long the F finder spins at full power.
-    public static boolean F_FINDER_AUTO_APPLY = true; // put the found F straight into F
+    public static boolean F_FINDER_AUTO_APPLY = true; // put the found F straight into F (does NOT change TARGET_1)
 
     // ======================= TELEMETRY =======================
     public static boolean SHOW_HELP = true;       // show the how-to lines in telemetry
@@ -263,10 +270,12 @@ public class PanelsPIDFTuner extends OpMode {
     private double steadyErrorSum = 0;
     private int steadyErrorCount = 0;
 
-    // F finder
+    // F finder: average steady-state speed (peak alone is noisy and makes F too small).
     private boolean finderRunning = false;      // true while the motor is at full power measuring.
     private final ElapsedTime finderTimer = new ElapsedTime();
-    private double finderMaxVelocity = 0;
+    private double finderVelocitySum = 0;       // ticks/s sum after spin-up
+    private int finderVelocityCount = 0;
+    private double finderPeakVelocity = 0;      // ticks/s peak (telemetry only)
     private String finderResult = "";
 
     // Gamepad edge detection (so holding a button only counts once)
@@ -453,7 +462,7 @@ public class PanelsPIDFTuner extends OpMode {
     }
 
     // ============================================================================
-    //  F FINDER (velocity only): full power for a few seconds, measure top speed.
+    //  F FINDER (velocity only): full power, then average steady-state speed for F.
     // ============================================================================
 
     private void startFinder() {
@@ -463,7 +472,9 @@ public class PanelsPIDFTuner extends OpMode {
             return;
         }
         finderRunning = true;
-        finderMaxVelocity = 0;
+        finderVelocitySum = 0;
+        finderVelocityCount = 0;
+        finderPeakVelocity = 0;
         finderTimer.reset();
         motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER); // raw power, no PID
     }
@@ -472,15 +483,19 @@ public class PanelsPIDFTuner extends OpMode {
         motor.setPower(1.0);
         double velocityTicks = Math.abs(motor.getVelocity());
         double velocityRpm = toRpm(velocityTicks);
-        // Ignore the first half second while it spins up.
+        // Ignore the first half second while it spins up; average the rest (not peak).
         if (finderTimer.seconds() > 0.5) {
-            finderMaxVelocity = Math.max(finderMaxVelocity, velocityTicks);
+            finderVelocitySum += velocityTicks;
+            finderVelocityCount++;
+            finderPeakVelocity = Math.max(finderPeakVelocity, velocityTicks);
         }
 
+        double avgRpmSoFar = finderVelocityCount > 0 ? toRpm(finderVelocitySum / finderVelocityCount) : 0;
         panels.addLine("F FINDER RUNNING - motor at FULL POWER. Keep hands clear!");
         panels.addLine(String.format("Time %.1f / %.1f s", finderTimer.seconds(), F_FINDER_SECONDS));
         panels.addData("measured", velocityRpm);
-        panels.addData("max RPM", toRpm(finderMaxVelocity));
+        panels.addData("avg RPM", avgRpmSoFar);
+        panels.addData("peak RPM", toRpm(finderPeakVelocity));
         panels.update(telemetry);
 
         if (finderTimer.seconds() < F_FINDER_SECONDS) return;
@@ -491,24 +506,31 @@ public class PanelsPIDFTuner extends OpMode {
         RUN_F_FINDER = false;
         setupKey = ""; // put the motor back in its normal mode next loop
 
-        if (finderMaxVelocity < 1) {
+        if (finderVelocityCount < 1 || finderVelocitySum < 1) {
             finderResult = "F finder saw no movement. Is the encoder plugged in?";
             return;
         }
-        // Full power gave finderMaxVelocity (ticks/s). CUSTOM_CODE F is power per RPM
-        // so it matches Shooter-style gains. Hub F stays in ticks/s units.
-        double maxRpm = toRpm(finderMaxVelocity);
-        double fullPowerAtNominal = VOLTAGE_COMPENSATION ? voltage / NOMINAL_VOLTAGE : 1.0;
-        double customF = maxRpm > 0 ? fullPowerAtNominal / maxRpm : 0;
-        double hubF = 32767.0 / finderMaxVelocity;
+
+        // Steady-state average ticks/s at full power. CUSTOM_CODE F = power per RPM (Shooter kF).
+        double avgTicks = finderVelocitySum / finderVelocityCount;
+        double avgRpm = toRpm(avgTicks);
+        double peakRpm = toRpm(finderPeakVelocity);
+        // Raw F matches Shooter (no voltage scale). Comp F only if VOLTAGE_COMPENSATION is on.
+        double rawCustomF = avgRpm > 0 ? 1.0 / avgRpm : 0;
+        double compCustomF = avgRpm > 0 ? (voltage / NOMINAL_VOLTAGE) / avgRpm : 0;
+        double customF = VOLTAGE_COMPENSATION ? compCustomF : rawCustomF;
+        double hubF = 32767.0 / avgTicks;
+        double suggestedTarget = Math.round(avgRpm * 0.7);
 
         finderResult = String.format(
-                "Max speed %.0f RPM (%.0f ticks/s) @ %.1fV. CUSTOM_CODE F=%.6f | HUB_BUILT_IN F=%.2f, P~%.2f, I~%.3f",
-                maxRpm, finderMaxVelocity, voltage, customF, hubF, hubF * 0.1, hubF * 0.01);
+                "Avg %.0f RPM (peak %.0f) @ %.1fV. F raw=%.6f | F volt-comp=%.6f | applied=%s. "
+                        + "HUB F=%.2f. Suggested TARGET_1~%.0f (not auto-changed).",
+                avgRpm, peakRpm, voltage, rawCustomF, compCustomF,
+                VOLTAGE_COMPENSATION ? "volt-comp" : "raw",
+                hubF, suggestedTarget);
 
         if (F_FINDER_AUTO_APPLY) {
             F = CONTROLLER == Controller.CUSTOM_CODE ? customF : hubF;
-            TARGET_1 = Math.round(maxRpm * 0.7); // a sensible RPM target to test with
         }
     }
 
@@ -749,20 +771,40 @@ public class PanelsPIDFTuner extends OpMode {
         }
         if (!finderResult.isEmpty()) panels.addLine("F finder: " + finderResult);
 
+        // ---- Transfer warnings (Shooter / NextFTC has no voltage scale and ignores kS) ----
+        if (CONTROLLER == Controller.CUSTOM_CODE && CONTROL_MODE == ControlMode.VELOCITY) {
+            if (VOLTAGE_COMPENSATION) {
+                panels.addLine("WARN: VOLTAGE_COMPENSATION is ON — Shooter.java does NOT. Gains will not match teleop.");
+            }
+            if (kS != 0) {
+                panels.addLine("WARN: kS != 0 — Shooter.java does not set kS. Leave kS=0 or add setKS in Shooter.");
+            }
+            if (D != 0 && D_FILTER > 0) {
+                panels.addLine("WARN: D is filtered here (D_FILTER) but not in NextFTC — expect a stronger D in Shooter.");
+            }
+        }
+
         // ---- Copy-paste line ----
         if (CONTROLLER == Controller.CUSTOM_CODE) {
             if (CONTROL_MODE == ControlMode.VELOCITY) {
+                // Shooter uses kV for F and currently has no kS field wired.
                 panels.addLine(String.format(
-                        "COPY THIS (RPM): kP=%s, kI=%s, kD=%s, kF=%s, kS=%s",
+                        "COPY THIS (Shooter): kP=%s, kI=%s, kD=%s, kF=%s",
+                        P, I, D, F));
+                panels.addLine(String.format(
+                        "COPY THIS (full CUSTOM_CODE): kP=%s, kI=%s, kD=%s, kF=%s, kS=%s",
                         P, I, D, F, kS));
             } else {
                 panels.addLine(String.format(
                         "COPY THIS (ticks): P=%s, I=%s, D=%s, F=%s, kS=%s",
                         P, I, D, F, kS));
             }
-        } else {
+        } else if (CONTROL_MODE == ControlMode.VELOCITY) {
             panels.addLine(String.format("COPY THIS: motor.setVelocityPIDFCoefficients(%s, %s, %s, %s);",
                     P, I, D, F));
+        } else {
+            panels.addLine(String.format(
+                    "COPY THIS (hub position uses P only): motor.setPositionPIDFCoefficients(%s);", P));
         }
 
         // ---- Help ----
@@ -771,7 +813,7 @@ public class PanelsPIDFTuner extends OpMode {
             panels.addLine("Goal: 'measured' jumps to 'target' fast and stays flat. F=guess P=push I=leftover D=brakes");
             panels.addLine("gp1: A on | B off | X target1 | Y target2 | dpad +/- nudge | RB F finder | back reset stats");
             if (CONTROL_MODE == ControlMode.VELOCITY) {
-                panels.addLine("VELOCITY units = RPM (set MOTOR_TYPE correctly). Gains match Shooter-style power-per-RPM.");
+                panels.addLine("VELOCITY = RPM. Keep VOLTAGE_COMPENSATION off + kS=0 to match Shooter.java.");
                 panels.addLine("1) P=I=D=0, press RB to find F  2) A to turn on  3) raise P till fast, back off if it buzzes");
                 panels.addLine("4) tiny I only if it stays under target  5) D usually 0 for flywheels");
             } else {
