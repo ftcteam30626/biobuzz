@@ -2,6 +2,9 @@ repositories {
     google()
     mavenCentral()
     maven { url = 'https://repo.dairy.foundation/releases/' }
+    maven { url = "https://maven.nextftc.dev/" }
+    maven { url = 'https://maven.brott.dev/' }
+    maven { url = "https://mymaven.bylazar.com/releases" }
 }
 
 dependencies {
@@ -13,9 +16,14 @@ dependencies {
     implementation 'org.firstinspires.ftc:Hardware:12.0.0'
     implementation 'org.firstinspires.ftc:FtcCommon:12.0.0'
     implementation 'org.firstinspires.ftc:Vision:12.0.0'
-
     implementation 'androidx.appcompat:appcompat:1.2.0'
-
     implementation 'com.pedropathing:revhub:3.0.0'
     implementation 'com.pedropathing:tuning:1.0.0'
+    implementation 'dev.nextftc.v2:control:0.2.1'
+    implementation 'dev.nextftc.v2:hardware:0.2.1'
+    implementation 'dev.nextftc.v2:robot:0.2.1'
+    implementation "com.acmerobotics.dashboard:dashboard:0.5.0"
+    implementation 'com.pedropathing:ftc:2.0.5'
+    implementation 'com.pedropathing:telemetry:1.0.0'
+    implementation 'com.bylazar:fullpanels:1.0.9'
 }
