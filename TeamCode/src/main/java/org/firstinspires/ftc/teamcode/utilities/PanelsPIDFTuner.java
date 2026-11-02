@@ -19,14 +19,14 @@ import com.qualcomm.robotcore.util.Range;                 // Range.clip keeps a 
  *
  * WHAT THIS DOES
  *   Spins the shooter motor and tries to hold a target speed (RPM).
- *   You change P, I, D, F, TARGET_RPM, and MOTOR_DIRECTION in Panels until the wheel
+ *   You change P, I, D, F, TARGET_RPM, and MOTOR_REVERSED in Panels until the wheel
  *   reaches the target fast and stays there.
  *
  * HOW TO USE
  *   1. Connect to the robot Wi-Fi and open Panels.
  *   2. On the Driver Station: Utility > "Panels PIDF Tuner" > INIT > START.
  *      On START the motor immediately spins toward TARGET_RPM (using F as the guess).
- *   3. In Panels > Configurables, edit P / I / D / F / TARGET_RPM / MOTOR_DIRECTION.
+ *   3. In Panels > Configurables, edit P / I / D / F / TARGET_RPM / MOTOR_REVERSED.
  *   4. After typing a number, press ENTER (or "Update all"). Typing alone
  *      does NOT send the new value to the robot.
  *
@@ -52,13 +52,14 @@ public class PanelsPIDFTuner extends OpMode {
 
     // ======================= EDIT THESE IN PANELS =======================
     // Press ENTER after each change so the robot actually gets the new value.
-    public static double P = 0.0;           // Push harder when far from target. Too big = wobbles.
+    public static double P = 0.005;           // Push harder when far from target. Too big = wobbles.
     public static double I = 0.0;           // Slowly removes small leftover error.
     public static double D = 0.0;           // Slows down when closing in fast (stops overshoot).
     // Base power guess: ~full power at 6000 RPM. Without F (and with P=0) the motor never moves.
-    public static double F = 0.00023;
-    public static double TARGET_RPM = 2500; // Speed we want the shooter wheel to spin at.
-    public static DcMotorSimple.Direction MOTOR_DIRECTION = DcMotorSimple.Direction.FORWARD;
+    public static double F = 0.00025;
+    public static double TARGET_RPM = 2050; // Speed we want the shooter wheel to spin at.
+    // Boolean (not DcMotorSimple.Direction): SDK enums can break Panels live updates for the whole class.
+    public static boolean MOTOR_REVERSED = false;
 
     // ======================= FIXED SETTINGS (not in Panels) =======================
     // Must match the motor name in the robot configuration on the Driver Station.
@@ -97,7 +98,7 @@ public class PanelsPIDFTuner extends OpMode {
         // Find the motor by name. tryGet returns null instead of crashing if the name is wrong.
         motor = hardwareMap.tryGet(DcMotorEx.class, MOTOR_NAME);
         if (motor != null) {
-            applyDirection(); // Respect MOTOR_DIRECTION before anything else.
+            applyDirection(); // Respect MOTOR_REVERSED before anything else.
             motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Start encoder count at 0.
             // We calculate PIDF ourselves, so the hub's built-in speed control stays off.
             // The encoder still measures speed — we just send raw power with setPower().
@@ -111,7 +112,7 @@ public class PanelsPIDFTuner extends OpMode {
     // Runs over and over after INIT, before you press START. Shows telemetry only.
     @Override
     public void init_loop() {
-        applyDirection(); // Let MOTOR_DIRECTION changes from Panels take effect before START.
+        applyDirection(); // Let MOTOR_REVERSED changes from Panels take effect before START.
         sendTelemetry(readRpm());
     }
 
@@ -138,7 +139,7 @@ public class PanelsPIDFTuner extends OpMode {
             return;
         }
 
-        applyDirection(); // Live Panels updates for MOTOR_DIRECTION.
+        applyDirection(); // Live Panels updates for MOTOR_REVERSED.
 
         // 1) Measure how fast we are going right now.
         double currentRpm = readRpm();
@@ -157,10 +158,12 @@ public class PanelsPIDFTuner extends OpMode {
         lastAppliedPower = 0;
     }
 
-    // Apply the Panels MOTOR_DIRECTION setting. Safe to call every loop.
+    // Apply the Panels MOTOR_REVERSED setting. Safe to call every loop.
     private void applyDirection() {
         if (motor == null) return;
-        motor.setDirection(MOTOR_DIRECTION);
+        motor.setDirection(MOTOR_REVERSED
+                ? DcMotorSimple.Direction.REVERSE
+                : DcMotorSimple.Direction.FORWARD);
     }
 
     // ============================================================================
@@ -239,7 +242,7 @@ public class PanelsPIDFTuner extends OpMode {
         panels.addData("Target RPM", TARGET_RPM);
         panels.addData("Error", TARGET_RPM - currentRpm);
         panels.addData("Power", lastAppliedPower);
-        panels.addData("Direction", MOTOR_DIRECTION);
+        panels.addData("Motor reversed", MOTOR_REVERSED);
         // The four gains you're tuning (should match what you just set in Panels).
         panels.addData("P", P);
         panels.addData("I", I);
