@@ -14,7 +14,7 @@ import dev.nextftc.robot.Telemetry;               // Sends text/numbers to the D
  *
  * HOW IT WORKS:
  *   - The motor turns on at full speed when PLAY is pressed (not during INIT).
- *   - Each press of X flips it: ON (full speed) -> OFF -> ON ...
+ *   - toggleWith(transfer) flips the intake and the transfer together (A button).
  */
 public class Intake implements Mechanism {
 
@@ -43,6 +43,14 @@ public class Intake implements Mechanism {
     /** Flips the intake: ON -> OFF, or OFF -> ON. */
     public Command toggle() {
         return instant(() -> setOn(!on)); // "!" flips true <-> false.
+    }
+
+    /** Flips the intake and the transfer together: both ON, or both OFF. */
+    public Command toggleWith(Transfer transfer) {
+        return instant(() -> {
+            setOn(!on);
+            transfer.setOn(on);
+        });
     }
 
     /**

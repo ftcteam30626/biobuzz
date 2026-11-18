@@ -43,7 +43,7 @@ import com.qualcomm.robotcore.util.Range;                 // Range.clip keeps a 
  *   Motor power = F part + P part + I part + D part  (then clipped to -1..1)
  *
  * WHEN YOU'RE DONE
- *   Copy P, I, D, F into Shooter.java. Panels values reset when the robot restarts.
+ *   Copy P, I, D, F into Outtake.java. Panels values reset when the robot restarts.
  * ============================================================================
  */
 @Configurable // Every public static field below shows up (and is editable) in Panels.
