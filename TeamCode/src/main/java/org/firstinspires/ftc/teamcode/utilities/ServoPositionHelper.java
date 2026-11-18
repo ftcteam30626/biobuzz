@@ -42,7 +42,7 @@ public class ServoPositionHelper extends LinearOpMode {
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initializing Completed");
-        servo = hardwareMap.get(Servo.class, "transferServo");
+        servo = hardwareMap.get(Servo.class, "GateServo");
 
         servoPosition = 0.5;
         servo.setPosition(servoPosition);

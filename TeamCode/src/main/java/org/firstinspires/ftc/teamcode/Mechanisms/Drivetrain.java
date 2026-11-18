@@ -1,95 +1,69 @@
 package org.firstinspires.ftc.teamcode.Mechanisms;
 
 import com.pedropathing.ivy.Command;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import dev.nextftc.hardware.actuators.NextMotor;
 import dev.nextftc.robot.Mechanism;
-import dev.nextftc.units.Units;
 
 public class Drivetrain implements Mechanism {
 
-    private final NextMotor leftFront = new NextMotor("leftFront");
-    private final NextMotor rightFront = new NextMotor("rightFront");
-    private final NextMotor rightBack = new NextMotor("rightBack");
-    private final NextMotor leftBack = new NextMotor("leftBack");
-    private final NextMotor[] motors = {leftFront, rightFront, rightBack, leftBack};
+    private DcMotor leftFront;
+    private DcMotor leftBack;
+    private DcMotor rightFront;
+    private DcMotor rightBack;
 
-    private final double[] currentPower = new double[4];
-    private final double[] holdTarget = new double[4];
-    private boolean holding = false;
-    private final ElapsedTime loopTimer = new ElapsedTime();
+    /** Finds the motors. Call once from the OpMode's start(), when the hardware map is ready. */
+    public void init(HardwareMap hardwareMap) {
+        leftFront = hardwareMap.get(DcMotor.class, "leftFront");
+        leftBack = hardwareMap.get(DcMotor.class, "leftBack");
+        rightFront = hardwareMap.get(DcMotor.class, "rightFront");
+        rightBack = hardwareMap.get(DcMotor.class, "rightBack");
 
-    public Drivetrain() {
-        for (NextMotor motor : motors) motor.setZeroPowerBehavior(NextMotor.ZeroPowerBehavior.BRAKE);
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
+    /** Drives from the gamepad sticks every loop. */
     public Command teleopDrive(Gamepad gamepad) {
         return infinite(() -> {
-            double drive = shape(-gamepad.left_stick_y);
-            double strafe = shape(gamepad.left_stick_x);
-            double turn = gamepad.right_stick_x > 0.05 || gamepad.right_stick_x < -0.05 ? gamepad.right_stick_x : 0;
-            drive(drive, strafe, turn);
+            double forward = -gamepad.left_stick_y;
+            double strafe = gamepad.left_stick_x;
+            double turn = gamepad.right_stick_x;
+            drive(forward, strafe, turn);
         });
     }
 
-    public void drive(double drive, double strafe, double turn) {
-        double dt = loopTimer.seconds();
-        loopTimer.reset();
-        if (dt > 0.1) dt = 0.02;
+    public void drive(double forward, double strafe, double turn) {
+        if (leftFront == null) return; // init() has not run yet.
 
-        if (drive == 0 && strafe == 0 && turn == 0) {
-            holdPosition();
-        } else {
-            holding = false;
-            double[] target = {
-                    drive + strafe + turn,
-                    drive - strafe - turn,
-                    drive + strafe - turn,
-                    drive - strafe + turn
-            };
+        double denominator = Math.max(
+                Math.abs(forward) + Math.abs(strafe) + Math.abs(turn),
+                1.0
+        );
 
-            double biggest = 1.0;
-            for (double p : target) biggest = Math.max(biggest, Math.abs(p));
-            for (int i = 0; i < 4; i++) {
-                target[i] = target[i] / biggest;
-                boolean speedingUp = Math.abs(target[i]) > Math.abs(currentPower[i]) || Math.signum(target[i]) != Math.signum(currentPower[i]);
-                double maxStep = (speedingUp ? 3.0 : 10.0) * dt;
-                currentPower[i] += Range.clip(target[i] - currentPower[i], -maxStep, maxStep);
-                motors[i].setThrottle(currentPower[i]);
-            }
-        }
-    }
+        double frontLeftPower = (forward + strafe + turn) / denominator;
+        double backLeftPower = (forward - strafe + turn) / denominator;
+        double frontRightPower = (forward - strafe - turn) / denominator;
+        double backRightPower = (forward + strafe - turn) / denominator;
 
-    private void holdPosition() {
-        if (!holding) {
-            for (int i = 0; i < 4; i++) {
-                holdTarget[i] = motors[i].getEncoderPosition().into(Units.Radians);
-            }
-            holding = true;
-        }
-
-        for (int i = 0; i < 4; i++) {
-            double error = holdTarget[i] - motors[i].getEncoderPosition().into(Units.Radians);
-            double power = Math.abs(error) <= 0.05 ? 0 : Range.clip(error * 0.08, -0.3, 0.3);
-            motors[i].setThrottle(power);
-            currentPower[i] = power;
-        }
+        leftFront.setPower(frontLeftPower);
+        leftBack.setPower(backLeftPower);
+        rightFront.setPower(frontRightPower);
+        rightBack.setPower(backRightPower);
     }
 
     public void stopNow() {
-        for (int i = 0; i < 4; i++) {
-            currentPower[i] = 0;
-            motors[i].setThrottle(0.0);
-        }
-    }
-
-    private static double shape(double input) {
-        double magnitude = Math.abs(input);
-        if (magnitude < 0.05) return 0;
-        return Math.signum(input) * magnitude * magnitude;
+        drive(0, 0, 0);
     }
 
     @Override
