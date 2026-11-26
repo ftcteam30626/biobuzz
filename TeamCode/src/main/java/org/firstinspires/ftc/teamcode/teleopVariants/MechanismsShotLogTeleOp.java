@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.teleopVariants;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Utility;
 import com.qualcomm.robotcore.util.RobotLog;
 import com.qualcomm.robotcore.util.Range;
 
@@ -55,7 +56,7 @@ import dev.nextftc.units.Units;               // Converts RPM to the units the s
  *   aligned       = true if the tag was centered before the shot, false if the timeout fired.
  *   Missing values are written as NaN (no tag, or no Pinpoint in the config).
  */
-@NextTeleop(name = "Mechanisms Shot Log TeleOp", group = "NextFTC")
+@Utility(name = "Mechanisms Shot Log TeleOp")
 public class MechanismsShotLogTeleOp extends NextOpMode {
 
     // ---- Auto-align (same tuning as LimelightAlignTeleOp) ----

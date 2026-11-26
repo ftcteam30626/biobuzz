@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.teleopVariants;
 
 import com.pedropathing.ivy.commands.Commands;
+import com.qualcomm.robotcore.eventloop.opmode.Utility;
+
 import dev.nextftc.robot.Telemetry;
 import dev.nextftc.robot.opmode.NextOpMode;
 import dev.nextftc.robot.opmode.NextTeleop;
@@ -20,7 +22,7 @@ import org.firstinspires.ftc.teamcode.Mechanisms.Outtake;
  * The RPM change only lives in this OpMode. Outtake.TARGET_RPM is not changed,
  * so MechanismsTeleOp still starts at its own TARGET_RPM.
  */
-@NextTeleop(name = "Biobuzz Tester", group = "Utilities")
+@Utility(name = "Biobuzz Tester")
 public class BiobuzzTester extends NextOpMode {
 
     // ---- Settings ----
