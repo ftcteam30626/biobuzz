@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.teleOp;
 
 import dev.nextftc.robot.opmode.NextOpMode;          // Base class for NextFTC OpModes.
 import dev.nextftc.robot.opmode.NextTeleop;          // Puts this OpMode in the Driver Station's TeleOp list.
@@ -9,12 +9,12 @@ import dev.nextftc.robot.triggers.CommandGamepad;    // Gamepad that can run Com
  *
  * CONTROLS (gamepad 1):
  *   Left stick  = drive / strafe,  Right stick = turn
- *   B = open / close the shooter gate
- *   X = turn the intake on / off
+ *   Y = shoot (gate opens for 5 seconds, then closes)
+ *   A = turn the intake and transfer on / off together
  *
  * WHAT HAPPENS WHEN:
  *   INIT  = nothing moves.
- *   PLAY  = driving turns on, shooter spins up to Shooter.TARGET_RPM, intake turns on at full speed, gate closes.
+ *   PLAY  = driving turns on, shooter spins up to Outtake.TARGET_RPM, intake and transfer turn on, gate goes to GATE_START.
  *   STOP  = NextFTC stops everything.
  *
  * NextFTC OpModes use @NextTeleop instead of @TeleOp, and extend NextOpMode.
@@ -23,7 +23,7 @@ import dev.nextftc.robot.triggers.CommandGamepad;    // Gamepad that can run Com
 @NextTeleop(name = "Mechanisms TeleOp", group = "NextFTC")
 public class MechanismsTeleOp extends NextOpMode {
 
-    private final FearOfBot robot; // The robot, so we can reach robot.shooter and robot.intake.
+    private final FearOfBot robot; // The robot, so we can reach robot.outtake and robot.intake.
 
     // Runs once when INIT is pressed. This is where buttons get hooked up to commands.
     public MechanismsTeleOp(FearOfBot robot) {
@@ -33,18 +33,19 @@ public class MechanismsTeleOp extends NextOpMode {
         CommandGamepad driver = new CommandGamepad(gamepad1);
 
         // onTrue = run the command once, the moment the button is pressed
-        driver.b().onTrue(robot.shooter.toggleGate());
-        driver.x().onTrue(robot.intake.toggle());
+        driver.x().onTrue(robot.outtake.shoot());
+        driver.a().onTrue(robot.intake.toggleWith(robot.transfer));
     }
 
     // Runs once when PLAY is pressed (not during INIT).
     // schedule() = "run this command now".
     @Override
     public void start() {
+        robot.drivetrain.init(hardwareMap); // Find the drive motors (hardware map is ready now).
         robot.drivetrain.teleopDrive(gamepad1).schedule(); // Keeps running every loop.
-        robot.shooter.closeGate().schedule();
-        robot.shooter.spinUp().schedule();
+        robot.outtake.begin(); // Gate to GATE_START, motors to TARGET_RPM.
         robot.intake.turnOn().schedule();
+        robot.transfer.setOn(true);
     }
 
     // Runs once when STOP is pressed. The robot object is reused between OpModes,
@@ -52,7 +53,8 @@ public class MechanismsTeleOp extends NextOpMode {
     @Override
     public void end() {
         robot.drivetrain.stopNow();
-        robot.shooter.stopNow();
+        robot.outtake.stopNow();
         robot.intake.stopNow();
+        robot.transfer.stopNow();
     }
 }
