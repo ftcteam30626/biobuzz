@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.utilities;
+package org.firstinspires.ftc.teamcode.teleopVariants;
 
 import com.pedropathing.ivy.commands.Commands;
 import dev.nextftc.robot.Telemetry;
@@ -7,7 +7,7 @@ import dev.nextftc.robot.opmode.NextTeleop;
 import dev.nextftc.robot.triggers.CommandGamepad;
 import dev.nextftc.units.Units;
 
-import org.firstinspires.ftc.teamcode.FearOfBot;
+import org.firstinspires.ftc.teamcode.teleOp.FearOfBot;
 import org.firstinspires.ftc.teamcode.Mechanisms.Outtake;
 
 /*
