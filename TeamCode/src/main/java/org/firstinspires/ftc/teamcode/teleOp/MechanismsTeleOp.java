@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.teleOp;
 
 import dev.nextftc.robot.opmode.NextOpMode;          // Base class for NextFTC OpModes.
 import dev.nextftc.robot.opmode.NextTeleop;          // Puts this OpMode in the Driver Station's TeleOp list.
