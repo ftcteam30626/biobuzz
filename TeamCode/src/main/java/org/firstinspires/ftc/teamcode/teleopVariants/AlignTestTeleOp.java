@@ -13,6 +13,7 @@ import org.firstinspires.ftc.teamcode.teleOp.FearOfBot;
 
 import dev.nextftc.robot.opmode.NextOpMode;   // Base class for NextFTC OpModes.
 import dev.nextftc.robot.opmode.NextTeleop;   // Puts this OpMode in the Driver Station's TeleOp list.
+import dev.nextftc.robot.triggers.CommandGamepad;
 
 /*
  * ALIGN TEST TELEOP (NextFTC)
@@ -21,6 +22,8 @@ import dev.nextftc.robot.opmode.NextTeleop;   // Puts this OpMode in the Driver 
  *   Left stick    = drive / strafe
  *   Right stick   = turn (only when NOT aligning)
  *   Right trigger = HOLD to align: the robot turns until it is square to the AprilTag
+ *   X             = shoot (gate opens, same as MechanismsTeleOp)
+ *   A             = intake + transfer on / off
  *
  * HOW THE ALIGN WORKS:
  *   The Limelight reports the tag's yaw relative to the camera. 0 = facing the tag straight on.
@@ -48,10 +51,16 @@ public class AlignTestTeleOp extends NextOpMode {
     private final FearOfBot robot;
     private final Limelight3A limelight;
 
+    private boolean lastX;
+
     // Runs once when INIT is pressed.
     public AlignTestTeleOp(FearOfBot robot) {
         super(robot);
         this.robot = robot;
+
+        // Intake toggle, same as MechanismsTeleOp.
+        CommandGamepad driver = new CommandGamepad(gamepad1);
+        driver.a().onTrue(robot.intake.toggleWith(robot.transfer));
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100);
@@ -63,11 +72,19 @@ public class AlignTestTeleOp extends NextOpMode {
     @Override
     public void start() {
         robot.drivetrain.init(hardwareMap);
+        robot.outtake.begin();              // Gate to rest, shooter to Outtake.TARGET_RPM.
+        robot.intake.turnOn().schedule();   // Intake runs from the start, same as MechanismsTeleOp.
+        robot.transfer.setOn(true);
     }
 
     // Runs every loop while PLAY is active.
     @Override
     public void periodic() {
+        // ---- Shoot (each press counts once) ----
+        boolean xPressed = gamepad1.x && !lastX;
+        lastX = gamepad1.x;
+        if (xPressed) robot.outtake.shoot().schedule();
+
         // ---- Yaw of the tags, and the hive center (NaN if no hive tag is seen) ----
         LLResult result = limelight.getLatestResult();
         double tagYaw = Double.NaN;
@@ -125,6 +142,9 @@ public class AlignTestTeleOp extends NextOpMode {
     @Override
     public void end() {
         robot.drivetrain.stopNow();
+        robot.outtake.stopNow();
+        robot.intake.stopNow();
+        robot.transfer.stopNow();
         limelight.stop();
     }
 
