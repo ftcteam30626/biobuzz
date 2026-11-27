@@ -11,6 +11,7 @@ import dev.nextftc.robot.triggers.CommandGamepad;    // Gamepad that can run Com
  *   Left stick  = drive / strafe,  Right stick = turn
  *   Y = shoot (gate opens for 5 seconds, then closes)
  *   A = turn the intake and transfer on / off together
+ *   LT = HOLD to align to the hive (right stick is ignored while aligning)
  *
  * WHAT HAPPENS WHEN:
  *   INIT  = nothing moves.
@@ -30,6 +31,8 @@ public class MechanismsTeleOp extends NextOpMode {
         super(robot);       // Let NextFTC set up the robot first.
         this.robot = robot; // Save it so start() and end() can use it.
 
+        robot.limelight.init(hardwareMap); // Starts the Limelight on pipeline 1 for the LT align.
+
         CommandGamepad driver = new CommandGamepad(gamepad1);
 
         // onTrue = run the command once, the moment the button is pressed
@@ -42,10 +45,19 @@ public class MechanismsTeleOp extends NextOpMode {
     @Override
     public void start() {
         robot.drivetrain.init(hardwareMap); // Find the drive motors (hardware map is ready now).
-        robot.drivetrain.teleopDrive(gamepad1).schedule(); // Keeps running every loop.
         robot.outtake.begin(); // Gate to GATE_START, motors to TARGET_RPM.
         robot.intake.turnOn().schedule();
         robot.transfer.setOn(true);
+    }
+
+    // Runs every loop while PLAY is active. Drives from the sticks; LT holds the align.
+    @Override
+    public void periodic() {
+        double forward = -gamepad1.left_stick_y;
+        double strafe = gamepad1.left_stick_x;
+        boolean aligning = gamepad1.left_trigger > 0.5;
+        double turn = robot.limelight.turnPower(aligning, gamepad1.right_stick_x);
+        robot.drivetrain.drive(forward, strafe, turn);
     }
 
     // Runs once when STOP is pressed. The robot object is reused between OpModes,
@@ -56,5 +68,6 @@ public class MechanismsTeleOp extends NextOpMode {
         robot.outtake.stopNow();
         robot.intake.stopNow();
         robot.transfer.stopNow();
+        robot.limelight.stopNow();
     }
 }
