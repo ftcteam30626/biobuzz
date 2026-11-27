@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.teleOp;
 
 import org.firstinspires.ftc.teamcode.Mechanisms.Drivetrain;
+import org.firstinspires.ftc.teamcode.Mechanisms.Limelight;
 import org.firstinspires.ftc.teamcode.Mechanisms.Intake;
 import org.firstinspires.ftc.teamcode.Mechanisms.Outtake;
 import org.firstinspires.ftc.teamcode.Mechanisms.Transfer;
@@ -28,11 +29,12 @@ public class FearOfBot implements NextRobot {
     public final Outtake outtake = new Outtake();
     public final Intake intake = new Intake();
     public final Transfer transfer = new Transfer();
+    public final Limelight limelight = new Limelight();
 
     // Tells NextFTC which mechanisms to run periodic() on every loop.
     @Override
     public Set<Mechanism> getMechanisms() {
         // Set.of(...) would be shorter, but it crashes on the Control Hub's older Android version.
-        return new HashSet<>(Arrays.asList(drivetrain, outtake, intake, transfer));
+        return new HashSet<>(Arrays.asList(drivetrain, outtake, intake, transfer, limelight));
     }
 }

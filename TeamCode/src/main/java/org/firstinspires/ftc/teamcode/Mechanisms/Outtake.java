@@ -72,8 +72,5 @@ public class Outtake implements Mechanism {
         shooterMotor.getVelocityConstants().setKI(kI);
         shooterMotor.getVelocityConstants().setKD(kD);
         shooterMotor.getVelocityConstants().setKV(kF); // NextFTC calls F "kV".
-
-        Telemetry.log("Outtake target RPM", TARGET_RPM);
-        Telemetry.log("Outtake RPM", shooterMotor.getEncoderVelocity().into(Units.RotationsPerMinute));
     }
 }
