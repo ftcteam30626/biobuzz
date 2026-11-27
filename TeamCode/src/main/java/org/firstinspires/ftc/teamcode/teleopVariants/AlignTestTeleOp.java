@@ -60,7 +60,6 @@ public class AlignTestTeleOp extends NextOpMode {
 
         // Intake toggle, same as MechanismsTeleOp.
         CommandGamepad driver = new CommandGamepad(gamepad1);
-        driver.a().onTrue(robot.intake.toggleWith(robot.transfer));
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100);

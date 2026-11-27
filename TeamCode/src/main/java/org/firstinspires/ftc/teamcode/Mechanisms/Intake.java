@@ -27,30 +27,28 @@ public class Intake implements Mechanism {
 
     private boolean on = false; // true while the intake is running.
 
+    private boolean reversed;
+
+    public Intake() {
+        setReversed(true); // Starts reversed.
+    }
+
+    /** Flips the intake motor between REVERSE and FORWARD. A plain method, not a Command. */
+    public void toggleReverse() {
+        setReversed(!reversed);
+    }
+
+    private void setReversed(boolean reverse) {
+        reversed = reverse;
+        intakeMotor.setDirection(reverse ? NextMotor.Direction.REVERSE : NextMotor.Direction.FORWARD);
+    }
+
     // ---- Commands ----
     // instant(...) makes a Command that runs the code inside it once, right away.
 
     /** Runs the intake at full speed. */
     public Command turnOn() {
         return instant(() -> setOn(true));
-    }
-
-    /** Stops the intake. */
-    public Command turnOff() {
-        return instant(() -> setOn(false));
-    }
-
-    /** Flips the intake: ON -> OFF, or OFF -> ON. */
-    public Command toggle() {
-        return instant(() -> setOn(!on)); // "!" flips true <-> false.
-    }
-
-    /** Flips the intake and the transfer together: both ON, or both OFF. */
-    public Command toggleWith(Transfer transfer) {
-        return instant(() -> {
-            setOn(!on);
-            transfer.setOn(on);
-        });
     }
 
     /**

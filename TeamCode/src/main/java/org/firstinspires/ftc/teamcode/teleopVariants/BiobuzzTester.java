@@ -22,7 +22,7 @@ import org.firstinspires.ftc.teamcode.Mechanisms.Outtake;
  * The RPM change only lives in this OpMode. Outtake.TARGET_RPM is not changed,
  * so MechanismsTeleOp still starts at its own TARGET_RPM.
  */
-@Utility(name = "Biobuzz Tester")
+@NextTeleop(name = "Biobuzz Tester")
 public class BiobuzzTester extends NextOpMode {
 
     // ---- Settings ----
@@ -38,7 +38,6 @@ public class BiobuzzTester extends NextOpMode {
         CommandGamepad driver = new CommandGamepad(gamepad1);
 
         driver.x().onTrue(robot.outtake.shoot());
-        driver.a().onTrue(robot.intake.toggleWith(robot.transfer));
         driver.rightBumper().onTrue(Commands.instant(() -> changeRpm(RPM_STEP)));
         driver.leftBumper().onTrue(Commands.instant(() -> changeRpm(-RPM_STEP)));
     }

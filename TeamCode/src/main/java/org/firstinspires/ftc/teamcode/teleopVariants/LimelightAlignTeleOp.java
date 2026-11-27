@@ -8,6 +8,8 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.Mechanisms.Drivetrain;
 
+import dev.nextftc.robot.opmode.NextTeleop;
+
 /*
  * LIMELIGHT ALIGN TELEOP
  *
@@ -23,7 +25,7 @@ import org.firstinspires.ftc.teamcode.Mechanisms.Drivetrain;
  *   While the trigger is held we set turn power = kP * tx, so the robot turns
  *   toward the target and tx shrinks to zero. If no target is seen, we don't turn.
  */
-@Utility(name = "Limelight Align")
+@NextTeleop(name = "Limelight Align")
 public class LimelightAlignTeleOp extends OpMode {
 
     private static final int PIPELINE_RED = 1;

@@ -56,7 +56,7 @@ import dev.nextftc.units.Units;               // Converts RPM to the units the s
  *   aligned       = true if the tag was centered before the shot, false if the timeout fired.
  *   Missing values are written as NaN (no tag, or no Pinpoint in the config).
  */
-@Utility(name = "Mechanisms Shot Log TeleOp")
+@NextTeleop(name = "Mechanisms Shot Log TeleOp")
 public class MechanismsShotLogTeleOp extends NextOpMode {
 
     // ---- Auto-align (same tuning as LimelightAlignTeleOp) ----
@@ -109,7 +109,6 @@ public class MechanismsShotLogTeleOp extends NextOpMode {
 
         // Keep the intake toggle from MechanismsTeleOp.
         CommandGamepad driver = new CommandGamepad(gamepad1);
-        driver.a().onTrue(robot.intake.toggleWith(robot.transfer));
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100);
