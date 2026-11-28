@@ -1,10 +1,14 @@
 package org.firstinspires.ftc.teamcode.Mechanisms;
 
+import com.bylazar.telemetry.TelemetryManager;   // The Panels object the robot hands us to fill.
 import com.pedropathing.ivy.Command;              // A small action the robot can run (e.g. "turn on").
+import com.qualcomm.robotcore.hardware.DcMotorEx; // SDK motor, used to read power and current.
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor; // Reads the battery voltage.
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 import dev.nextftc.hardware.actuators.NextMotor;  // NextFTC's motor.
 import dev.nextftc.robot.Mechanism;               // Marks this class as one part of the robot.
-import dev.nextftc.robot.Telemetry;               // Sends text/numbers to the Driver Station screen.
 
 /*
  * INTAKE MECHANISM
@@ -15,6 +19,7 @@ import dev.nextftc.robot.Telemetry;               // Sends text/numbers to the D
  * HOW IT WORKS:
  *   - The motor turns on at full speed when PLAY is pressed (not during INIT).
  *   - toggleWith(transfer) flips the intake and the transfer together (A button).
+ *   - addTelemetry(panels) adds this mechanism's readouts. FearOfBot.sendTelemetry() calls it.
  */
 public class Intake implements Mechanism {
 
@@ -24,6 +29,10 @@ public class Intake implements Mechanism {
     // ---- Hardware ----
     // NextMotor doesn't touch the hardwareMap until it's first used, so it's safe to create it here.
     private final NextMotor intakeMotor = new NextMotor("IntakeMotor");
+
+    // Readings only (power, current, battery). Set by init(); null until then.
+    private DcMotorEx sdkMotor;
+    private VoltageSensor batteryVoltage;
 
     private boolean on = false; // true while the intake is running.
 
@@ -41,6 +50,12 @@ public class Intake implements Mechanism {
     private void setReversed(boolean reverse) {
         reversed = reverse;
         intakeMotor.setDirection(reverse ? NextMotor.Direction.REVERSE : NextMotor.Direction.FORWARD);
+    }
+
+    /** Finds the motor and battery for readings. Call once from the OpMode constructor. */
+    public void init(HardwareMap hardwareMap) {
+        sdkMotor = hardwareMap.tryGet(DcMotorEx.class, "IntakeMotor");
+        batteryVoltage = hardwareMap.voltageSensor.iterator().next();
     }
 
     // ---- Commands ----
@@ -68,9 +83,16 @@ public class Intake implements Mechanism {
         intakeMotor.setThrottle(turnOn ? INTAKE_POWER : 0.0);
     }
 
-    // Runs every loop automatically, so we use it to show what the intake is doing.
-    @Override
-    public void periodic() {
-        Telemetry.log("Intake", on ? "ON" : "OFF");
+    /** Intake readouts (ON/OFF, power, estimated voltage, current) for Panels and the Driver Station. */
+    public void addTelemetry(TelemetryManager panels) {
+        panels.addData("Intake", on ? "ON" : "OFF");
+        if (sdkMotor == null) return; // init() has not run in this OpMode.
+        double power = sdkMotor.getPower();
+        panels.addData("Intake power", power);
+        panels.addData("Intake voltage (V, est.)", power * batteryVoltage.getVoltage()); // Motor sees roughly power x battery.
+        panels.addData("Intake current (A)", sdkMotor.getCurrent(CurrentUnit.AMPS));
     }
+
+    @Override
+    public void periodic() {}
 }

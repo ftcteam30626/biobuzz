@@ -58,6 +58,9 @@ public class AlignTestTeleOp extends NextOpMode {
         super(robot);
         this.robot = robot;
 
+        robot.intake.init(hardwareMap);   // Readings (power, current, voltage).
+        robot.transfer.init(hardwareMap); // Readings (power, current).
+
         // Intake toggle, same as MechanismsTeleOp.
         CommandGamepad driver = new CommandGamepad(gamepad1);
 
@@ -119,22 +122,22 @@ public class AlignTestTeleOp extends NextOpMode {
 
         robot.drivetrain.drive(forward, strafe, turn);
 
-        // ---- Telemetry ----
-        telemetry.addData("Mode", mode);
-        telemetry.addData("Tag yaw (deg, 0 = square)", Double.isNaN(tagYaw) ? "NONE" : String.format("%.2f", tagYaw));
-        telemetry.addData("Turn power", "%.2f", turn);
-        telemetry.addData("Limelight valid", result != null && result.isValid());
-        telemetry.addData("Tags seen", result == null || result.getFiducialResults() == null
+        // ---- Telemetry: this OpMode's own vision readouts, then every mechanism's readouts ----
+        robot.panels.addData("Mode", mode);
+        robot.panels.addData("Tag yaw (deg, 0 = square)", Double.isNaN(tagYaw) ? "NONE" : String.format("%.2f", tagYaw));
+        robot.panels.addData("Limelight valid", result != null && result.isValid());
+        robot.panels.addData("Tags seen", result == null || result.getFiducialResults() == null
                 ? 0 : result.getFiducialResults().size());
-        telemetry.addData("Hive center tx (deg, 0 = centered)", result == null || !result.isValid()
+        robot.panels.addData("Hive center tx (deg, 0 = centered)", result == null || !result.isValid()
                 ? "NONE" : String.format("%.2f", averageTagTxDeg(result)));
-        telemetry.addData("Hive center bearing (deg, 0 = centered)", Double.isNaN(centerBearingDeg)
+        robot.panels.addData("Hive center bearing (deg, 0 = centered)", Double.isNaN(centerBearingDeg)
                 ? "NONE" : String.format("%.2f", centerBearingDeg));
         if (hiveCenter != null) {
-            telemetry.addData("Hive center x, z (in)", String.format("%.1f, %.1f", hiveCenter[0], hiveCenter[2]));
+            robot.panels.addData("Hive center x, z (in)", String.format("%.1f, %.1f", hiveCenter[0], hiveCenter[2]));
         }
-        telemetry.addData("Pipeline index", result == null ? "--" : result.getPipelineIndex());
-        telemetry.addData("Tag pose (x,y,z in | yaw,pitch,roll deg)", poseText(result));
+        robot.panels.addData("Pipeline index", result == null ? "--" : result.getPipelineIndex());
+        robot.panels.addData("Tag pose (x,y,z in | yaw,pitch,roll deg)", poseText(result));
+        robot.sendTelemetry(telemetry);
     }
 
     // Runs once when STOP is pressed.

@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.Mechanisms;
 
-import com.bylazar.telemetry.PanelsTelemetry;        // Sends numbers to Panels.
-import com.bylazar.telemetry.TelemetryManager;       // The object we put telemetry into.
+import com.bylazar.telemetry.TelemetryManager;       // The Panels object the robot hands us to fill.
 import com.qualcomm.robotcore.hardware.DcMotorEx;    // SDK motor, used to read power and current.
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
@@ -17,6 +16,7 @@ import dev.nextftc.robot.Mechanism;
  *
  * HOW IT WORKS:
  *   - Turned on and off by setOn(). Intake.toggleWith(transfer) calls it together with the intake.
+ *   - addTelemetry(panels) adds this mechanism's readouts. FearOfBot.sendTelemetry() calls it.
  */
 public class Transfer implements Mechanism {
 
@@ -27,6 +27,7 @@ public class Transfer implements Mechanism {
     public final NextMotor transferMotor = new NextMotor("TransferMotor");
 
     private boolean reversed;
+    private DcMotorEx sdkMotor; // Same "TransferMotor" as transferMotor, used only for power and current readings.
 
     public Transfer() {
         setReversed(false); // Starts forward.
@@ -42,20 +43,14 @@ public class Transfer implements Mechanism {
         transferMotor.setDirection(reverse ? NextMotor.Direction.REVERSE : NextMotor.Direction.FORWARD);
     }
 
-    // Panels readouts (power and current). The OpMode calls panels.update(telemetry) to send them.
-    private TelemetryManager panels;
-    private DcMotorEx sdkMotor; // Same "TransferMotor" as transferMotor, used only for power and current readings.
-
     /** Finds the motor for readings. Call once from the OpMode constructor. */
     public void init(HardwareMap hardwareMap) {
-        panels = PanelsTelemetry.INSTANCE.getTelemetry();
         sdkMotor = hardwareMap.tryGet(DcMotorEx.class, "TransferMotor");
     }
 
-    // Runs every loop automatically: adds the transfer's power and current to Panels.
-    @Override
-    public void periodic() {
-        if (sdkMotor == null || panels == null) return;
+    /** Transfer readouts (power and current) for Panels and the Driver Station. */
+    public void addTelemetry(TelemetryManager panels) {
+        if (sdkMotor == null) return; // init() has not run in this OpMode.
         panels.addData("Transfer power", sdkMotor.getPower());
         panels.addData("Transfer current (A)", sdkMotor.getCurrent(CurrentUnit.AMPS));
     }
@@ -70,4 +65,7 @@ public class Transfer implements Mechanism {
         transferMotor.setThrottle(0.0);
         transferMotor.update();
     }
+
+    @Override
+    public void periodic() {}
 }

@@ -1,10 +1,12 @@
 package org.firstinspires.ftc.teamcode.Mechanisms;
 
+import com.bylazar.telemetry.TelemetryManager;      // The Panels object the robot hands us to fill.
 import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor; // Reads the battery voltage.
 
 import dev.nextftc.robot.Mechanism;
 
@@ -14,6 +16,10 @@ public class Drivetrain implements Mechanism {
     private DcMotor leftBack;
     private DcMotor rightFront;
     private DcMotor rightBack;
+
+    // Readings only. Set by init(); null until then.
+    private VoltageSensor batteryVoltage;
+    private double lastTurn = 0.0; // Turn power sent in the last drive() call.
 
     /** Finds the motors. Call once from the OpMode's start(), when the hardware map is ready. */
     public void init(HardwareMap hardwareMap) {
@@ -31,6 +37,8 @@ public class Drivetrain implements Mechanism {
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        batteryVoltage = hardwareMap.voltageSensor.iterator().next();
     }
 
     /** Drives from the gamepad sticks every loop. */
@@ -44,6 +52,7 @@ public class Drivetrain implements Mechanism {
     }
 
     public void drive(double forward, double strafe, double turn) {
+        lastTurn = turn;
         if (leftFront == null) return; // init() has not run yet.
 
         double denominator = Math.max(
@@ -64,6 +73,12 @@ public class Drivetrain implements Mechanism {
 
     public void stopNow() {
         drive(0, 0, 0);
+    }
+
+    /** Drive readouts (battery voltage, turn power) for Panels and the Driver Station. */
+    public void addTelemetry(TelemetryManager panels) {
+        if (batteryVoltage != null) panels.addData("Battery voltage (V)", batteryVoltage.getVoltage());
+        panels.addData("Turn power", lastTurn);
     }
 
     @Override
