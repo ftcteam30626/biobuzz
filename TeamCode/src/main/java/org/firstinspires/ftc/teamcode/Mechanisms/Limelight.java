@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Mechanisms;
 
+import com.bylazar.telemetry.TelemetryManager;      // The Panels object the robot hands us to fill.
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -94,6 +95,16 @@ public class Limelight implements Mechanism {
     public double hiveDistanceCm() { return hiveDistanceIn * 2.54; }   // NaN if no hive tag.
     public boolean resultValid() { return result != null && result.isValid(); }
     public int pipelineIndex() { return result == null ? -1 : (int) result.getPipelineIndex(); }
+
+    /** Limelight readouts (align mode, tag status, hive distance) for Panels and the Driver Station. Prints nothing until init(). */
+    public void addTelemetry(TelemetryManager panels) {
+        if (limelight == null) return; // init() has not run in this OpMode.
+        panels.addData("Align mode", mode);
+        panels.addData("Limelight valid", resultValid());
+        panels.addData("Pipeline index", pipelineIndex());
+        double distanceCm = hiveDistanceCm();
+        panels.addData("Distance (cm)", Double.isNaN(distanceCm) ? "--" : String.valueOf(Math.round(distanceCm)));
+    }
 
     // Runs every loop automatically (FearOfBot lists this mechanism).
     @Override

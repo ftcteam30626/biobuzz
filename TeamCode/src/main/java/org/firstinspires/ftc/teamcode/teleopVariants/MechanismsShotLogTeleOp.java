@@ -107,6 +107,9 @@ public class MechanismsShotLogTeleOp extends NextOpMode {
         super(robot);
         this.robot = robot;
 
+        robot.intake.init(hardwareMap);   // Readings (power, current, voltage).
+        robot.transfer.init(hardwareMap); // Readings (power, current).
+
         // Keep the intake toggle from MechanismsTeleOp.
         CommandGamepad driver = new CommandGamepad(gamepad1);
 
@@ -189,19 +192,17 @@ public class MechanismsShotLogTeleOp extends NextOpMode {
             state = ShotState.IDLE;
         }
 
-        // ---- Telemetry ----
-        double actualRpm = actualRpm();
-        telemetry.addData("State", state.name());
-        telemetry.addData("Shooter target RPM", "%.0f", Outtake.TARGET_RPM);
-        telemetry.addData("Shooter actual RPM", "%.0f", actualRpm);
-        telemetry.addData("Pipeline", pipelineName(currentPipeline));
-        telemetry.addData("Tag", tagVisible ? "FOUND (id " + visibleTagId + ")" : "NONE");
-        telemetry.addData("tx (deg)", tagVisible ? String.format(Locale.US, "%.2f", tx) : "--");
-        telemetry.addData("Yaw (deg)", Double.isNaN(readHeadingDeg()) ? "NO PINPOINT"
+        // ---- Telemetry: this OpMode's own shot readouts, then every mechanism's readouts ----
+        robot.panels.addData("State", state.name());
+        robot.panels.addData("Pipeline", pipelineName(currentPipeline));
+        robot.panels.addData("Tag", tagVisible ? "FOUND (id " + visibleTagId + ")" : "NONE");
+        robot.panels.addData("tx (deg)", tagVisible ? String.format(Locale.US, "%.2f", tx) : "--");
+        robot.panels.addData("Yaw (deg)", Double.isNaN(readHeadingDeg()) ? "NO PINPOINT"
                 : String.format(Locale.US, "%.2f", readHeadingDeg()));
-        telemetry.addData("Last shot", lastShot);
-        telemetry.addData("Log file", logPath);
-        telemetry.addData("Controls", "X shoot | A intake | LB pipeline");
+        robot.panels.addData("Last shot", lastShot);
+        robot.panels.addData("Log file", logPath);
+        robot.panels.addData("Controls", "X shoot | A intake | LB pipeline");
+        robot.sendTelemetry(telemetry);
     }
 
     // Runs once when STOP is pressed. Turn everything off and close the log.
